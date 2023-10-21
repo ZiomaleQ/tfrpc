@@ -46,8 +46,8 @@ func main() {
 			Details:    "Arknights",
 			LargeImage: "arknights",
 			LargeText:  "Arknights",
-			SmallImage: "arknights",
-			SmallText:  "Arknights",
+			SmallImage: "keiko",
+			SmallText:  "Keiko",
 			Timestamps: &client.Timestamps{
 				Start: &ts,
 			},
