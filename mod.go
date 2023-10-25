@@ -17,12 +17,16 @@ type Process struct {
 }
 
 func main() {
-	err := client.Login("622783718783844356")
-	if err != nil {
-		panic(err)
-	}
+	rpcErr := client.Login("622783718783844356")
 
 	for {
+
+		if rpcErr != nil {
+			time.Sleep(2 * time.Minute)
+			rpcErr = client.Login("622783718783844356")
+			continue
+		}
+
 		processes := getProcessList()
 
 		worthProcesses := make([]Process, 0)
@@ -33,13 +37,18 @@ func main() {
 			}
 		}
 
+		if len(worthProcesses) == 0 {
+			time.Sleep(1 * time.Minute)
+			continue
+		}
+
 		tsInt, err := strconv.ParseInt(worthProcesses[0].StartTime, 10, 64)
 
 		if err != nil {
 			panic(err)
 		}
 
-		ts := time.Unix(tsInt, 0)
+		ts := time.UnixMicro(tsInt)
 
 		client.SetActivity(client.Activity{
 			State:      "Gra z Google Play",
@@ -53,21 +62,18 @@ func main() {
 			},
 		})
 
-		time.Sleep(15 * time.Second)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
 func getProcessList() []Process {
-	size := exec.Command("powershell.exe", "-Command", "(Get-Process | Where-Object {$_.mainWindowTitle} ).Count")
-	cmd := exec.Command("powershell.exe", "-Command", "Get-Process | Where-Object {$_.mainWindowTitle} | Select Name, mainWindowTitle, StartTime | ConvertTo-Json -Compress")
-
-	rawOut, err := cmd.Output()
+	rawOut, err := runPWSHCommand("-Command", "Get-Process | Where-Object {$_.mainWindowTitle} | Select Name, mainWindowTitle, StartTime | ConvertTo-Json -Compress")
 
 	if err != nil {
 		panic(err)
 	}
 
-	rawSize, err := size.Output()
+	rawSize, err := runPWSHCommand("-Command", "(Get-Process | Where-Object {$_.mainWindowTitle} ).Count")
 
 	if err != nil {
 		panic(err)
@@ -82,4 +88,9 @@ func getProcessList() []Process {
 	}
 
 	return processList
+}
+
+func runPWSHCommand(args ...string) ([]byte, error) {
+	cmd := exec.Command("powershell.exe", args...)
+	return cmd.Output()
 }
